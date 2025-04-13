@@ -1,16 +1,77 @@
-# habit_tracker
+# Habit Tracker App 🥦🔥
 
-A new Flutter project.
+A minimalist Flutter + Firebase app to help you build consistent daily habits — inspired by Duolingo’s streak and reward system.
+
+This app helps you log and track two simple habits:
+- 🥦 Eat Vegetables before coming home from work
+- 🚶 Go for a short walk
+
+It’s designed for gentle, motivating habit-building with streak tracking, rewards, and visual feedback.
+
+---
+
+## Features
+
+✅ Log daily habits with one tap  
+✅ Track streaks per habit (Duolingo-style)  
+✅ Disable buttons once logged for the day  
+✅ Pop-up reward messages at key streak milestones (e.g. 7, 30 days)  
+✅ Firebase Firestore backend (fully synced)  
+✅ Web support + Android-ready
+
+---
+
+## Screenshots (Coming Soon)
+
+---
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+### 🚀 Prerequisites
+- Flutter SDK installed (>= 3.x)
+- Firebase project created
+- A `firebase_options.dart` file configured (you can use `flutterfire configure` or add it manually)
 
-A few resources to get you started if this is your first Flutter project:
+### 🛠 Run the App
+```bash
+flutter pub get
+flutter run -d chrome  # or -d android
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 🔐 Firebase Setup (Quick)
+- Enable Firestore in your Firebase console
+- Create a Web app and copy its config into `firebase_options.dart`
+- Set Firestore rules to test mode for dev:
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## Project Structure
+```text
+/lib
+  main.dart            # Main app UI & logic
+  firebase_options.dart  # Firebase config (not checked into Git)
+```
+
+---
+
+## Roadmap / Ideas
+- ❄️ Add Freeze Tokens to preserve streaks
+- 🔔 Local notification reminders
+- 📅 Calendar view of completions
+- 📈 Progress dashboard
+- 👤 Firebase Auth for multiple users
+
+---
+
+## License
+MIT © 2024
