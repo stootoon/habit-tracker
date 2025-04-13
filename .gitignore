@@ -1,0 +1,8 @@
+build/
+.dart_tool/
+.packages
+.pub/
+.flutter-plugins
+firebase_options.dart
+android/key.properties
+ios/Runner/GeneratedPluginRegistrant.*
