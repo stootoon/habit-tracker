@@ -35,6 +35,8 @@ class HabitHomePage extends StatefulWidget {
 class _HabitHomePageState extends State<HabitHomePage> {
   final habits = ['Eat Vegetables', 'Walk'];
   final userId = 'demo_user';
+  final bool debugMode = true;
+
   final rewards = {
     7: '🎉 Weekly Reward: You earned an ice cream!',
     30: '🏆 Monthly Reward: You earned fried chicken!'
@@ -63,7 +65,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
         setState(() {
           streaks[habit] = doc['streak'] ?? 0;
           lastCompleted[habit] = doc['last_completed'] ?? '';
-          disabled[habit] = lastCompleted[habit] ==
+          disabled[habit] = !debugMode && lastCompleted[habit] ==
               DateTime.now().toIso8601String().split('T')[0];
         });
       } else {
@@ -97,7 +99,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
     setState(() {
       streaks[habit] = streak;
       lastCompleted[habit] = today;
-      disabled[habit] = true;
+      disabled[habit] = !debugMode && lastCompleted[habit] == today;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
