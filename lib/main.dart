@@ -40,10 +40,11 @@ class _HabitHomePageState extends State<HabitHomePage> {
   final userId = 'demo_user';
   final bool debugMode = true;
 
-  final rewards = {
-    7: '🎉 Weekly Reward: You earned an ice cream!',
-    30: '🏆 Monthly Reward: You earned fried chicken!'
-  };
+  int streakFreezes = 0; // Number of streak freezes the user has
+  int kfcsEarned = 0;    // Number of KFCs earned by the user  
+
+  final streakFreezeEvery = 3;
+  final kfcEvery = 7;
 
   final intervals = [3, 7, 14, 30, 60, 90, 180, 365];
   final startColor = Colors.brown; // Start of interval
@@ -78,6 +79,18 @@ class _HabitHomePageState extends State<HabitHomePage> {
   }
 
   Future<void> fetchStreaks() async {
+    final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          streakFreezes = userDoc.data()?['streakFreezes'] ?? 0;
+          kfcsEarned = userDoc.data()?['kfcsEarned'] ?? 0;
+        });
+      }
+
     for (var habit in habits) {
       final doc = await FirebaseFirestore.instance
           .collection('users')
@@ -127,8 +140,67 @@ class _HabitHomePageState extends State<HabitHomePage> {
       disabled[habit] = true; // Disable the button after marking as done
     });
 
-    // Play a random audio file
-    playRandomAudio();
+    bool achievedInterval = false;
+    bool achievedStreakFreeze = false;
+    bool achievedKFC = false;
+
+    // Check if achieved a badge
+    for (var interval in intervals) {
+      if (streak == interval) {
+        achievedInterval = true;
+      }
+    }
+
+      // Check if a streak freeze is earned
+  if (streak % streakFreezeEvery == 0) {
+          achievedStreakFreeze = true;  
+    setState(() {
+      streakFreezes = streakFreezes < 3 ? streakFreezes+1 : streakFreezes;
+
+    });
+
+    // Update Firestore
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .set({
+      'streakFreezes': streakFreezes,
+    }, SetOptions(merge: true));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('🎉 You earned a streak freeze! Total: $streakFreezes')),
+    );
+  }
+
+  // Check if a KFC is earned
+  if (streak % kfcEvery == 0) {
+          achievedKFC = true; 
+    setState(() {
+      kfcsEarned=1;
+
+    });
+
+    // Update Firestore
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .set({
+      'kfcsEarned': kfcsEarned,
+    }, SetOptions(merge: true));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('🍗 You earned a KFC! Total: $kfcsEarned')),
+    );
+  }
+    if (achievedKFC) {
+      playAudio("yay_long.wav");
+    } else if (achievedStreakFreeze) {
+      playAudio("huzzah.wav");
+    } else {
+      // Play a random audio file
+      playRandomAudio();
+    }
+  
 
     // Trigger confetti animation
     confettiControllers[habit]?.play();
@@ -148,14 +220,21 @@ class _HabitHomePageState extends State<HabitHomePage> {
     });
   }
 
+void playAudio(String assetName) {
+  final soundFile = "assets/sounds/$assetName";
+  // Play the audio using the browser's default audio playback
+  final audio = html.AudioElement(soundFile);
+  audio.play();
+}  
+
 void playRandomAudio() {
   // List of available audio files
   final audioFiles = [
-    'assets/sounds/yay_short/yay_chipmunks.wav',
-    'assets/sounds/yay_short/yay_enthusiastic.wav',
+   // 'assets/sounds/yay_short/yay_chipmunks.wav',
+   // 'assets/sounds/yay_short/yay_enthusiastic.wav',
     'assets/sounds/yay_short/yay_rat.wav',
-    'assets/sounds/yay_short/yay_small_group.wav',
-    'assets/sounds/yay_short/youpi.wav',
+   // 'assets/sounds/yay_short/yay_small_group.wav',
+   // 'assets/sounds/yay_short/youpi.wav',
   ];
 
   // Select a random file
@@ -243,6 +322,7 @@ void playRandomAudio() {
   }
 
   Widget buildBadgesAndStreak(List<int> collectedBadges, int streak) {
+    // counter color should be end.color if streak is in collected badges else blue
     return Row(
       children: [
         for (var badge in collectedBadges)
@@ -257,7 +337,7 @@ void playRandomAudio() {
               '$badge',
               style: const TextStyle(fontSize: 16, color: Colors.white),
             ),
-          ),
+          ),          
         Container(
           margin: const EdgeInsets.only(left: 8),
           padding: const EdgeInsets.all(8),
@@ -295,12 +375,26 @@ void resetStreaks() async {
     });
   }
 
+// Reset streak freezes and KFCs
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .set({
+    'streakFreezes': 0,
+    'kfcsEarned': 0,
+  }, SetOptions(merge: true));
+
+  setState(() {
+    streakFreezes = 0;
+    kfcsEarned = 0;
+  });
+
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('✔ All streaks have been reset!')),
+    const SnackBar(content: Text('✔ All streaks, streak freezes, and KFCs have been reset!')),
   );
 }
-  @override
-  Widget build(BuildContext context) {
+@override
+Widget build(BuildContext context) {
     // Get the date in 2 April 2023 format
     // Use a month string instead of a number
     final monthNames = [
@@ -311,9 +405,18 @@ void resetStreaks() async {
     final dateFormat = "${currentDate.day} ${month} ${currentDate.year}";
     return Scaffold(
       appBar: AppBar(
-        title: Text("Your Habits on $dateFormat (debugMode: $debugMode)"),
-        centerTitle: true,
-        actions: [
+        title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Your Habits on $dateFormat"),
+          Text(
+            "Streak Freezes: $streakFreezes | KFCs: $kfcsEarned",
+            style: const TextStyle(fontSize: 14),
+          ),
+        ],
+      ),
+      centerTitle: true,
+      actions: [
           if (debugMode)
             IconButton(
               icon: const Icon(Icons.skip_next),
