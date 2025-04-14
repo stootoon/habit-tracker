@@ -127,6 +127,9 @@ class _HabitHomePageState extends State<HabitHomePage> {
       disabled[habit] = true; // Disable the button after marking as done
     });
 
+    // Play a random audio file
+    playRandomAudio();
+
     // Trigger confetti animation
     confettiControllers[habit]?.play();
 
@@ -145,15 +148,28 @@ class _HabitHomePageState extends State<HabitHomePage> {
     });
   }
 
+void playRandomAudio() {
+  // List of available audio files
+  final audioFiles = [
+    'assets/sounds/yay_short/yay_chipmunks.wav',
+    'assets/sounds/yay_short/yay_enthusiastic.wav',
+    'assets/sounds/yay_short/yay_rat.wav',
+    'assets/sounds/yay_short/yay_small_group.wav',
+    'assets/sounds/yay_short/youpi.wav',
+  ];
+
+  // Select a random file
+  final randomFile = (audioFiles..shuffle()).first;
+
+  // Play the audio using the browser's default audio playback
+  final audio = html.AudioElement(randomFile);
+  audio.play();
+}
   Widget habitButton(String habit) {
     final streak = streaks[habit] ?? 0;
     final isDisabled = disabled[habit] ?? false;
     final isCompleted = lastCompleted[habit] == currentDate.toIso8601String().split('T')[0];
-
-    // Dynamically calculate collected badges (up to the previous day)
     final collectedBadges = intervals.where((interval) => streak > interval).toList();
-
-    // Append last completed date if in debug mode
     final habitText = debugMode
         ? '$habit (Last completed: ${lastCompleted[habit] ?? "Never"})'
         : habit;
@@ -163,81 +179,98 @@ class _HabitHomePageState extends State<HabitHomePage> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Confetti widget
-          ConfettiWidget(
-            confettiController: confettiControllers[habit]!,
-            blastDirectionality: BlastDirectionality.explosive, // Spread in all directions
-            shouldLoop: false,
-            colors: const [Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start, // Align everything to the left
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start, // Align button and checkmark horizontally
-                children: [
-                  // Habit button
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: isDisabled ? null : () => markHabitDone(habit),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        backgroundColor: isDisabled ? Colors.grey : null, // Gray out if disabled
-                      ),
-                      child: Text(
-                        habitText,
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Checkbox for completion status
-                  Icon(
-                    isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
-                    color: isCompleted ? Colors.green : Colors.grey,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Display collected badges and streak counter
-              Row(
-                children: [
-                  // Badges
-                  for (var badge in collectedBadges)
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: endColor, // Gold for completed badges
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '$badge',
-                        style: const TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-                    ),
-                  // Streak counter
-                  Container(
-                    margin: const EdgeInsets.only(left: 8), // Add spacing after badges
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue, // Use a distinct color for the streak counter
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '$streak',
-                      style: const TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          buildConfetti(habit),
+          buildHabitContent(habitText, isDisabled, isCompleted, collectedBadges, streak, habit),
         ],
       ),
+    );
+  }
+
+  Widget buildConfetti(String habit) {
+    return ConfettiWidget(
+      confettiController: confettiControllers[habit]!,
+      blastDirectionality: BlastDirectionality.explosive,
+      shouldLoop: false,
+      colors: const [Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple],
+    );
+  }
+
+  Widget buildHabitContent(
+    String habitText,
+    bool isDisabled,
+    bool isCompleted,
+    List<int> collectedBadges,
+    int streak,
+    String habit,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        buildHabitRow(habitText, isDisabled, isCompleted, habit),
+        const SizedBox(height: 8),
+        buildBadgesAndStreak(collectedBadges, streak),
+      ],
+    );
+  }
+
+  Widget buildHabitRow(String habitText, bool isDisabled, bool isCompleted, String habit) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: isDisabled ? null : () => markHabitDone(habit),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              backgroundColor: isDisabled ? Colors.grey : null,
+            ),
+            child: Text(
+              habitText,
+              style: const TextStyle(fontSize: 18),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Icon(
+          isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
+          color: isCompleted ? Colors.green : Colors.grey,
+        ),
+      ],
+    );
+  }
+
+  Widget buildBadgesAndStreak(List<int> collectedBadges, int streak) {
+    return Row(
+      children: [
+        for (var badge in collectedBadges)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: endColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$badge',
+              style: const TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+        Container(
+          margin: const EdgeInsets.only(left: 8),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            '$streak',
+            style: const TextStyle(fontSize: 16, color: Colors.white),
+          ),
+        ),
+      ],
     );
   }
 

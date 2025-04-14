@@ -66,6 +66,7 @@ flutter:
     - assets/sounds/click.ogg
     - assets/sounds/reward7.wav
     - assets/sounds/reward28.wav
+    - assets/sounds/yay_short/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
