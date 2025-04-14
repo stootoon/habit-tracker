@@ -393,6 +393,25 @@ void resetStreaks() async {
     const SnackBar(content: Text('✔ All streaks, streak freezes, and KFCs have been reset!')),
   );
 }
+
+void resetKFCs() async {
+  // Update Firestore
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .set({
+    'kfcsEarned': 0,
+  }, SetOptions(merge: true));
+
+  // Update local state
+  setState(() {
+    kfcsEarned = 0;
+  });
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('🍗 All KFCs have been reset!')),
+  );
+}
 @override
 Widget build(BuildContext context) {
     // Get the date in 2 April 2023 format
@@ -409,27 +428,46 @@ Widget build(BuildContext context) {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text("Your Habits on $dateFormat"),
-          Text(
-            "Streak Freezes: $streakFreezes | KFCs: $kfcsEarned",
-            style: const TextStyle(fontSize: 14),
+          Row(
+            children: [
+              Text(
+                "Streak Freezes: $streakFreezes",
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(width: 8),
+              // Show drumstick emoji if KFCs > 0
+              if (kfcsEarned > 0)
+                GestureDetector(
+                  onTap: resetKFCs, // Reset KFCs when pressed
+                  child: const Text(
+                    "🍗",
+                    style: TextStyle(fontSize: 18),
+                  ),
+                )
+              else
+                Text(
+                  "KFCs: $kfcsEarned",
+                  style: const TextStyle(fontSize: 14),
+                ),
+            ],
           ),
         ],
       ),
       centerTitle: true,
       actions: [
-          if (debugMode)
-            IconButton(
-              icon: const Icon(Icons.skip_next),
-              onPressed: progressToNextDay,
-              tooltip: "Progress to next day",
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: resetStreaks,
-              tooltip: "Reset all streaks",
-            ),
-        ],
-      ),
+        if (debugMode)
+          IconButton(
+            icon: const Icon(Icons.skip_next),
+            onPressed: progressToNextDay,
+            tooltip: "Progress to next day",
+          ),
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          onPressed: resetStreaks,
+          tooltip: "Reset all streaks",
+        ),
+      ],
+    ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
