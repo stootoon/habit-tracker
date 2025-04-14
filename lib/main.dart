@@ -45,7 +45,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
     30: '🏆 Monthly Reward: You earned fried chicken!'
   };
 
-  final intervals = [1, 3, 7, 14, 30, 60, 90, 180, 365];
+  final intervals = [3, 7, 14, 30, 60, 90, 180, 365];
   final startColor = Colors.brown; // Start of interval
   final endColor = Colors.amber;  // End of interval (gold)
 
@@ -274,6 +274,31 @@ void playRandomAudio() {
     );
   }
 
+void resetStreaks() async {
+  for (var habit in habits) {
+    // Update Firestore
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('habits')
+        .doc(habit)
+        .set({
+      'streak': 0,
+      'last_completed': '',
+    }, SetOptions(merge: true));
+
+    // Update local state
+    setState(() {
+      streaks[habit] = 0;
+      lastCompleted[habit] = '';
+      disabled[habit] = false; // Re-enable all buttons
+    });
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('✔ All streaks have been reset!')),
+  );
+}
   @override
   Widget build(BuildContext context) {
     // Get the date in 2 April 2023 format
@@ -287,12 +312,18 @@ void playRandomAudio() {
     return Scaffold(
       appBar: AppBar(
         title: Text("Your Habits on $dateFormat (debugMode: $debugMode)"),
+        centerTitle: true,
         actions: [
           if (debugMode)
             IconButton(
               icon: const Icon(Icons.skip_next),
               onPressed: progressToNextDay,
               tooltip: "Progress to next day",
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: resetStreaks,
+              tooltip: "Reset all streaks",
             ),
         ],
       ),
