@@ -1,3 +1,7 @@
+plugins {
+    //id("com.android.application")
+}
+
 allprojects {
     repositories {
         google()
@@ -16,6 +20,9 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
+// Required to prevent compileSdkVersion error in root project
+plugins.withId("com.android.application") {
+    extensions.configure<com.android.build.gradle.AppExtension>("android") {
+        compileSdkVersion(33)
+    }
 }

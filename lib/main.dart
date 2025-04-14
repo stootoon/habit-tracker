@@ -6,7 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'dart:html' as html;
+//import 'dart:html' as html;
 import 'package:confetti/confetti.dart';
 
 void main() async {
@@ -223,11 +223,17 @@ class _HabitHomePageState extends State<HabitHomePage> {
     checkAndApplyStreakFreezes();
   }
 
-void playAudio(String assetName) {
+void playAudio(String assetName) async {
   final soundFile = "assets/sounds/$assetName";
   // Play the audio using the browser's default audio playback
-  final audio = html.AudioElement(soundFile);
-  audio.play();
+  //final audio = html.AudioElement(soundFile);
+  //audio.play();
+
+  try {
+    await _audioPlayer.play(AssetSource(soundFile)); // Use AudioPlayer to play the asset
+  } catch (e) {
+    print("Error playing audio: $e");
+  }
 }  
 
 void playRandomAudio() {
@@ -235,17 +241,14 @@ void playRandomAudio() {
   final audioFiles = [
    // 'assets/sounds/yay_short/yay_chipmunks.wav',
    // 'assets/sounds/yay_short/yay_enthusiastic.wav',
-    'assets/sounds/yay_short/yay_rat.wav',
+    'yay_short/yay_rat.wav',
    // 'assets/sounds/yay_short/yay_small_group.wav',
    // 'assets/sounds/yay_short/youpi.wav',
   ];
 
   // Select a random file
   final randomFile = (audioFiles..shuffle()).first;
-
-  // Play the audio using the browser's default audio playback
-  final audio = html.AudioElement(randomFile);
-  audio.play();
+  playAudio(randomFile);
 }
   Widget habitButton(String habit) {
     final streak = streaks[habit] ?? 0;
