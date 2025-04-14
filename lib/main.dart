@@ -9,11 +9,35 @@ import 'package:audioplayers/audioplayers.dart';
 //import 'dart:html' as html;
 import 'package:confetti/confetti.dart';
 
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  print("🔄 Firebase.apps.length = ${Firebase.apps.length}");
+  print("🔍 Platform: ${kIsWeb ? 'Web' : Platform.operatingSystem}");
+
+  if (Firebase.apps.isEmpty) {
+    if (kIsWeb) {
+      print("🌐 Initializing Firebase for Web with options...");
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else if (Platform.isIOS) {
+      print("🍎 Initializing Firebase for iOS with options...");
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } else {
+      print("🤖 Initializing Firebase for Android (no options)...");
+      await Firebase.initializeApp(); // ⚠️ Do NOT pass options here!
+    }
+  } else {
+    print("✅ Firebase already initialized.");
+  }
+
+  print("🚀 Firebase initialized: ${Firebase.apps.first.name}");
   runApp(HabitApp());
 }
 
@@ -224,11 +248,12 @@ class _HabitHomePageState extends State<HabitHomePage> {
   }
 
 void playAudio(String assetName) async {
-  final soundFile = "assets/sounds/$assetName";
+  final soundFile = "sounds/$assetName";
   // Play the audio using the browser's default audio playback
   //final audio = html.AudioElement(soundFile);
   //audio.play();
 
+  print("Playing sound: $soundFile");
   try {
     await _audioPlayer.play(AssetSource(soundFile)); // Use AudioPlayer to play the asset
   } catch (e) {
@@ -241,13 +266,16 @@ void playRandomAudio() {
   final audioFiles = [
    // 'assets/sounds/yay_short/yay_chipmunks.wav',
    // 'assets/sounds/yay_short/yay_enthusiastic.wav',
-    'yay_short/yay_rat.wav',
+    'yay_short/yay_rat_fixed.mp3',
    // 'assets/sounds/yay_short/yay_small_group.wav',
    // 'assets/sounds/yay_short/youpi.wav',
   ];
 
   // Select a random file
-  final randomFile = (audioFiles..shuffle()).first;
+  //randomFile = (audioFiles..shuffle()).first;
+  //playAudio(randomFile);
+  //final randomFile = "test.mp3";
+  final randomFile = "yay_rat.mp3";
   playAudio(randomFile);
 }
   Widget habitButton(String habit) {
