@@ -143,7 +143,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
       currentDate = currentDate.add(const Duration(days: 1));
       for (var habit in habits) {
         disabled[habit] = false; // Re-enable all buttons
-        lastCompleted[habit] = ''; // Clear last completed
+        //lastCompleted[habit] = ''; // Clear last completed
       }
     });
   }
@@ -276,9 +276,17 @@ void playRandomAudio() {
 
   @override
   Widget build(BuildContext context) {
+    // Get the date in 2 April 2023 format
+    // Use a month string instead of a number
+    final monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final month = monthNames[currentDate.month - 1];
+    final dateFormat = "${currentDate.day} ${month} ${currentDate.year}";
     return Scaffold(
       appBar: AppBar(
-        title: Text("Your Habits (debugMode: $debugMode)"),
+        title: Text("Your Habits on $dateFormat (debugMode: $debugMode)"),
         actions: [
           if (debugMode)
             IconButton(
