@@ -45,7 +45,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
     30: '🏆 Monthly Reward: You earned fried chicken!'
   };
 
-  final intervals = [7, 14, 30, 60, 90, 180, 365];
+  final intervals = [1, 3, 7, 14, 30, 60, 90, 180, 365];
   final startColor = Colors.brown; // Start of interval
   final endColor = Colors.amber;  // End of interval (gold)
 
@@ -160,67 +160,79 @@ class _HabitHomePageState extends State<HabitHomePage> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // Align everything to the left
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start, // Align button and checkmark horizontally
+          // Confetti widget
+          ConfettiWidget(
+            confettiController: confettiControllers[habit]!,
+            blastDirectionality: BlastDirectionality.explosive, // Spread in all directions
+            shouldLoop: false,
+            colors: const [Colors.green, Colors.blue, Colors.pink, Colors.orange, Colors.purple],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start, // Align everything to the left
             children: [
-              // Habit button
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: isDisabled ? null : () => markHabitDone(habit),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start, // Align button and checkmark horizontally
+                children: [
+                  // Habit button
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: isDisabled ? null : () => markHabitDone(habit),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: isDisabled ? Colors.grey : null, // Gray out if disabled
+                      ),
+                      child: Text(
+                        habitText,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Checkbox for completion status
+                  Icon(
+                    isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
+                    color: isCompleted ? Colors.green : Colors.grey,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Display collected badges and streak counter
+              Row(
+                children: [
+                  // Badges
+                  for (var badge in collectedBadges)
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: endColor, // Gold for completed badges
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$badge',
+                        style: const TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                    ),
+                  // Streak counter
+                  Container(
+                    margin: const EdgeInsets.only(left: 8), // Add spacing after badges
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue, // Use a distinct color for the streak counter
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    backgroundColor: isDisabled ? Colors.grey : null, // Gray out if disabled
+                    child: Text(
+                      '$streak',
+                      style: const TextStyle(fontSize: 16, color: Colors.white),
+                    ),
                   ),
-                  child: Text(
-                    habitText,
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Checkbox for completion status
-              Icon(
-                isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
-                color: isCompleted ? Colors.green : Colors.grey,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Display collected badges and streak counter
-          Row(
-            children: [
-              // Badges
-              for (var badge in collectedBadges)
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: endColor, // Gold for completed badges
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '$badge',
-                    style: const TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ),
-              // Streak counter
-              Container(
-                margin: const EdgeInsets.only(left: 8), // Add spacing after badges
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue, // Use a distinct color for the streak counter
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$streak',
-                  style: const TextStyle(fontSize: 16, color: Colors.white),
-                ),
+                ],
               ),
             ],
           ),
