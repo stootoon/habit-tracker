@@ -389,6 +389,8 @@ void resetStreaks() async {
     kfcsEarned = 0;
   });
 
+  currentDate = DateTime.now();
+
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('✔ All streaks, streak freezes, and KFCs have been reset!')),
   );
