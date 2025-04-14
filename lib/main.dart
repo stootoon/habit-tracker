@@ -425,10 +425,11 @@ Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text("Your Habits on $dateFormat"),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 "Streak Freezes: $streakFreezes",
