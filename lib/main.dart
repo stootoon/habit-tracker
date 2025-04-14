@@ -145,55 +145,6 @@ class _HabitHomePageState extends State<HabitHomePage> {
     });
   }
 
-  int getCurrentInterval(int streak) {
-    for (int i = 0; i < intervals.length; i++) {
-      if (streak <= intervals[i]) {
-        return i;
-      }
-    }
-    return intervals.length - 1; // Beyond the last interval
-  }
-
-  int getRelativePosition(int streak, int intervalIndex) {
-    if (intervalIndex == 0) {
-      return streak; // First interval
-    }
-    return streak - intervals[intervalIndex - 1];
-  }
-
-  Color getCurrentColor(int streak, int intervalIndex) {
-    final intervalStart = intervalIndex == 0 ? 1 : intervals[intervalIndex - 1] + 1;
-    final intervalEnd = intervals[intervalIndex];
-    final progress = (streak - intervalStart) / (intervalEnd - intervalStart);
-    return Color.lerp(startColor, endColor, progress)!;
-  }
-
-  String visualStreak(int streak) {
-    final stars = streak ~/ 28;
-    final flames = (streak % 28) ~/ 7;
-    final sparkles = streak % 7;
-
-    // Return the static part and the new emoji separately
-    return '🌟' * stars + '🔥' * flames + '✨' * (sparkles - 1);
-  }
-
-  Widget animatedEmoji(int streak) {
-    final sparkles = streak % 7;
-
-    // Only animate the last added emoji
-    if (sparkles > 0) {
-      return AnimatedOpacity(
-        opacity: 1.0,
-        duration: const Duration(milliseconds: 500),
-        child: Text(
-          '✨',
-          style: const TextStyle(fontSize: 18),
-        ),
-      );
-    }
-    return const SizedBox.shrink(); // No animation if no new emoji
-  }
-
   Widget habitButton(String habit) {
     final streak = streaks[habit] ?? 0;
     final isDisabled = disabled[habit] ?? false;
@@ -282,7 +233,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Your Habits"),
+        title: Text("Your Habits (debugMode: $debugMode)"),
         actions: [
           if (debugMode)
             IconButton(
