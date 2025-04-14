@@ -432,8 +432,8 @@ Widget build(BuildContext context) {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "Streak Freezes: $streakFreezes",
-                style: const TextStyle(fontSize: 14),
+                "${streakFreezes > 0 ? '❄️' * streakFreezes : 'Streak Freezes: 0'} ",
+                style: TextStyle(fontSize: streakFreezes > 0 ? 20 : 14),
               ),
               const SizedBox(width: 8),
               // Show drumstick emoji if KFCs > 0
@@ -442,7 +442,7 @@ Widget build(BuildContext context) {
                   onTap: resetKFCs, // Reset KFCs when pressed
                   child: const Text(
                     "🍗",
-                    style: TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 20),
                   ),
                 )
               else
