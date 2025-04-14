@@ -61,7 +61,9 @@ class _HabitHomePageState extends State<HabitHomePage> {
   @override
   void initState() {
     super.initState();
-    fetchStreaks();
+    fetchStreaks().then((_) {
+      checkAndApplyStreakFreezes();
+    });
 
     // Initialize a ConfettiController for each habit
     for (var habit in habits) {
@@ -218,6 +220,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
         //lastCompleted[habit] = ''; // Clear last completed
       }
     });
+    checkAndApplyStreakFreezes();
   }
 
 void playAudio(String assetName) {
@@ -414,6 +417,66 @@ void resetKFCs() async {
     const SnackBar(content: Text('🍗 All KFCs have been reset!')),
   );
 }
+
+Future<void> checkAndApplyStreakFreezes() async {
+  final yesterday = currentDate.subtract(const Duration(days: 1)).toIso8601String().split('T')[0];
+
+  for (var habit in habits) {
+    final lastCompletedDate = lastCompleted[habit] ?? '';
+    if (lastCompletedDate.isEmpty) continue;
+
+    final lastCompletedDateTime = DateTime.parse(lastCompletedDate);
+    final difference = currentDate.difference(lastCompletedDateTime).inDays;
+
+    // Check if the streak is broken
+    if (difference > 1) {
+      if (streakFreezes > 0) {
+        // Apply a streak freeze
+        setState(() {
+          streakFreezes--;
+          lastCompleted[habit] = yesterday;
+        });
+
+        // Update Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('habits')
+            .doc(habit)
+            .set({
+          'last_completed': yesterday,
+        }, SetOptions(merge: true));
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .set({
+          'streakFreezes': streakFreezes,
+        }, SetOptions(merge: true));
+
+        // Play the "win_chimes" sound
+        playAudio("win_chimes.wav");
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❄️ Streak freeze applied to "$habit"!')),
+        );
+      } else {
+        // Reset the streak to 0
+        setState(() {
+          streaks[habit] = 0;
+          lastCompleted[habit] = '';
+          disabled[habit] = false; // Re-enable the button
+        });
+        // No streak freezes available, streak is broken
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('⚠️ Streak broken for "$habit"!')),
+        );
+      }
+    }
+  }
+}
+
+
 @override
 Widget build(BuildContext context) {
     // Get the date in 2 April 2023 format
