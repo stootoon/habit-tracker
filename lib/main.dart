@@ -199,77 +199,52 @@ class _HabitHomePageState extends State<HabitHomePage> {
     final isDisabled = disabled[habit] ?? false;
     final isCompleted = lastCompleted[habit] == currentDate.toIso8601String().split('T')[0];
 
-    // Determine the current interval and relative position
-    final currentIntervalIndex = getCurrentInterval(streak);
-    final relativePosition = getRelativePosition(streak, currentIntervalIndex);
-
-    // Determine the color for the current counter
-    final currentColor = getCurrentColor(streak, currentIntervalIndex);
-
     // Dynamically calculate collected badges (up to the previous day)
     final collectedBadges = intervals.where((interval) => streak > interval).toList();
 
     // Append last completed date if in debug mode
-    final habitText = debugMode 
-    ? '$habit (Last completed: ${lastCompleted[habit] ?? "Never"})' 
-    : habit;
+    final habitText = debugMode
+        ? '$habit (Last completed: ${lastCompleted[habit] ?? "Never"})'
+        : habit;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // Center badges and button
+        crossAxisAlignment: CrossAxisAlignment.start, // Align everything to the left
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start, // Align button and checkmark horizontally
             children: [
+              // Habit button
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isDisabled ? null : () => markHabitDone(habit),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    backgroundColor: isDisabled ? Colors.grey : null, // Gray out if disabled
+                  ),
+                  child: Text(
+                    habitText,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               // Checkbox for completion status
               Icon(
                 isCompleted ? Icons.check_box : Icons.check_box_outline_blank,
                 color: isCompleted ? Colors.green : Colors.grey,
               ),
-              const SizedBox(width: 8),
-              // Habit button
-              ElevatedButton(
-                onPressed: isDisabled ? null : () => markHabitDone(habit),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  backgroundColor: isDisabled ? Colors.grey : null, // Gray out if disabled
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Habit text
-                    Text(
-                      habitText,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    const SizedBox(width: 8),
-                    // Current counter
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: currentColor, // Dynamic color based on progress
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '$streak',
-                        style: const TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 8),
-          // Display collected badges
+          // Display collected badges and streak counter
           Row(
-            //mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Badges
               for (var badge in collectedBadges)
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -283,43 +258,21 @@ class _HabitHomePageState extends State<HabitHomePage> {
                     style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
+              // Streak counter
+              Container(
+                margin: const EdgeInsets.only(left: 8), // Add spacing after badges
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue, // Use a distinct color for the streak counter
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$streak',
+                  style: const TextStyle(fontSize: 16, color: Colors.white),
+                ),
+              ),
             ],
           ),
-          if (debugMode) ...[
-            const SizedBox(height: 8),
-            // Debug mode field to reset streak
-            SizedBox(
-              width: 160,
-              child: TextField(
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Set streak (debug)',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-                onSubmitted: (val) async {
-                  final newStreak = int.tryParse(val);
-                  if (newStreak != null) {
-                    // Update Firestore
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(userId)
-                        .collection('habits')
-                        .doc(habit)
-                        .set({
-                      'streak': newStreak,
-                      'last_completed': lastCompleted[habit] ?? '',
-                    }, SetOptions(merge: true));
-
-                    // Update local state
-                    setState(() {
-                      streaks[habit] = newStreak;
-                    });
-                  }
-                },
-              ),
-            ),
-          ],
         ],
       ),
     );
