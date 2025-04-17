@@ -552,17 +552,18 @@ Widget build(BuildContext context) {
       ),
       centerTitle: true,
       actions: [
-        if (kDebugMode)
+        if (kDebugMode) ...[
           IconButton(
             icon: const Icon(Icons.skip_next),
             onPressed: progressToNextDay,
             tooltip: "Progress to next day",
           ),
-        IconButton(
-          icon: const Icon(Icons.refresh),
-          onPressed: resetStreaks,
-          tooltip: "Reset all streaks",
-        ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: resetStreaks,
+            tooltip: "Reset all streaks",
+          ),
+        ],
       ],
     ),
       body: Center(

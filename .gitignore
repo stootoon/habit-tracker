@@ -6,3 +6,4 @@ build/
 firebase_options.dart
 android/key.properties
 ios/Runner/GeneratedPluginRegistrant.*
+*.DS_Store*
