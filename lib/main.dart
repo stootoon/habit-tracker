@@ -10,7 +10,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:confetti/confetti.dart';
 
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,7 +62,6 @@ class HabitHomePage extends StatefulWidget {
 class _HabitHomePageState extends State<HabitHomePage> {
   final habits = ['Eat Vegetables', 'Walk Around the Block'];
   final userId = 'demo_user';
-  final bool debugMode = true;
 
   int streakFreezes = 0; // Number of streak freezes the user has
   int kfcsEarned = 0;    // Number of KFCs earned by the user  
@@ -129,7 +128,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
         setState(() {
           streaks[habit] = doc['streak'] ?? 0;
           lastCompleted[habit] = doc['last_completed'] ?? '';
-          disabled[habit] = !debugMode && lastCompleted[habit] ==
+          disabled[habit] = !kDebugMode && lastCompleted[habit] ==
               currentDate.toIso8601String().split('T')[0];
         });
       } else {
@@ -240,7 +239,8 @@ class _HabitHomePageState extends State<HabitHomePage> {
     setState(() {
       currentDate = currentDate.add(const Duration(days: 1));
       for (var habit in habits) {
-        disabled[habit] = false; // Re-enable all buttons
+        disabled[habit] = lastCompleted[habit] ==
+          currentDate.toIso8601String().split('T')[0]; // Update disabled state
         //lastCompleted[habit] = ''; // Clear last completed
       }
     });
@@ -283,7 +283,7 @@ void playRandomAudio() {
     final isDisabled = disabled[habit] ?? false;
     final isCompleted = lastCompleted[habit] == currentDate.toIso8601String().split('T')[0];
     final collectedBadges = intervals.where((interval) => streak > interval).toList();
-    final habitText = debugMode
+    final habitText = kDebugMode
         ? '$habit (Last completed: ${lastCompleted[habit] ?? "Never"})'
         : habit;
 
@@ -552,7 +552,7 @@ Widget build(BuildContext context) {
       ),
       centerTitle: true,
       actions: [
-        if (debugMode)
+        if (kDebugMode)
           IconButton(
             icon: const Icon(Icons.skip_next),
             onPressed: progressToNextDay,
