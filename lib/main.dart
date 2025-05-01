@@ -61,7 +61,8 @@ class HabitHomePage extends StatefulWidget {
 
 class _HabitHomePageState extends State<HabitHomePage> {
   final habits = ['Eat Vegetables', 'Walk Around the Block'];
-  final userId = 'demo_user';
+  //final userId = 'demo_user';
+  final String userId = const String.fromEnvironment('USER_ID', defaultValue: 'demo_user');
 
   int streakFreezes = 0; // Number of streak freezes the user has
   int kfcsEarned = 0;    // Number of KFCs earned by the user  
@@ -80,6 +81,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
   final List<int> collectedBadges = [];
   final Map<String, ConfettiController> confettiControllers = {};
   DateTime currentDate = DateTime.now();
+  List<Map<String, dynamic>> messages = [];
 
   @override
   void initState() {
@@ -87,6 +89,9 @@ class _HabitHomePageState extends State<HabitHomePage> {
     fetchStreaks().then((_) {
       checkAndApplyStreakFreezes();
     });
+
+    cleanUpOldMessages();
+    listenToMessages();
 
     // Initialize a ConfettiController for each habit
     for (var habit in habits) {
@@ -101,6 +106,57 @@ class _HabitHomePageState extends State<HabitHomePage> {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> addMessage(String text) async {
+    final message = {
+      'text': text,
+      'from': "system",
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('messages')
+        .add(message);
+    print("Message added: $text from ${message['from']} at ${message['timestamp']}");
+  }
+
+  void listenToMessages() {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen((querySnapshot) {
+          setState(() {
+            messages = querySnapshot.docs.map((doc) {
+              return {
+                'text':doc['text'],
+                'from': doc['from'],
+                'timestamp': doc['timestamp'],
+              };
+            }).toList();
+          });
+        });
+  }
+
+  Future<void> cleanUpOldMessages() async {
+    final oneWeekAgo = DateTime.now().subtract(const Duration(days: 7));
+
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('messages')
+        .where('timestamp', isLessThan: oneWeekAgo.toIso8601String())
+        .get();
+
+    for (var doc in querySnapshot.docs) {
+      await doc.reference.delete();
+      print("Deleted old message: ${doc['text']} from ${doc['from']} at ${doc['timestamp']}");
+    }
   }
 
   Future<void> fetchStreaks() async {
@@ -192,9 +248,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
       'streakFreezes': streakFreezes,
     }, SetOptions(merge: true));
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('🎉 You earned a streak freeze! Total: $streakFreezes')),
-    );
+    addMessage('🎉 You earned a streak freeze! Total: $streakFreezes');
   }
 
   // Check if a KFC is earned
@@ -213,9 +267,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
       'kfcsEarned': kfcsEarned,
     }, SetOptions(merge: true));
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('🍗 You earned a KFC! Total: $kfcsEarned')),
-    );
+    addMessage('🍗 You earned a KFC! Total: $kfcsEarned');
   }
     if (achievedKFC) {
       playAudio("yay_long.wav");
@@ -230,9 +282,7 @@ class _HabitHomePageState extends State<HabitHomePage> {
     // Trigger confetti animation
     confettiControllers[habit]?.play();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('✔ Logged $habit for today!')),
-    );
+    addMessage('✔ Logged $habit for today!');
   }
 
   void progressToNextDay() {
@@ -425,9 +475,8 @@ void resetStreaks() async {
 
   currentDate = DateTime.now();
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('✔ All streaks, streak freezes, and KFCs have been reset!')),
-  );
+  addMessage('✔ All streaks, streak freezes, and KFCs have been reset!');
+  
 }
 
 void resetKFCs() async {
@@ -444,9 +493,7 @@ void resetKFCs() async {
     kfcsEarned = 0;
   });
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('🍗 All KFCs have been reset!')),
-  );
+  addMessage('🍗 All KFCs have been reset!');
 }
 
 Future<void> checkAndApplyStreakFreezes() async {
@@ -488,9 +535,7 @@ Future<void> checkAndApplyStreakFreezes() async {
         // Play the "win_chimes" sound
         playAudio("win_chimes.wav");
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❄️ Streak freeze applied to "$habit"!')),
-        );
+        addMessage('❄️ Streak freeze applied to "$habit"!');
       } else {
         // Reset the streak to 0
         setState(() {
@@ -499,9 +544,7 @@ Future<void> checkAndApplyStreakFreezes() async {
           disabled[habit] = false; // Re-enable the button
         });
         // No streak freezes available, streak is broken
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('⚠️ Streak broken for "$habit"!')),
-        );
+        addMessage('⚠️ Streak broken for "$habit"!');
       }
     }
   }
@@ -523,7 +566,7 @@ Widget build(BuildContext context) {
         title: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text("Your Habits on $dateFormat"),
+          Text("Hello $userId! Your habits on $dateFormat"),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -569,14 +612,39 @@ Widget build(BuildContext context) {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
-          child: ListView(
-           padding: const EdgeInsets.all(20),
-           children: [
-            for (var habit in habits) habitButton(habit),
-           ],
+          child: Column(
+            children: [
+              Expanded(
+                flex: 2,
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    for (var habit in habits) habitButton(habit),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Expanded(
+                flex: 1,
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(10),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Text(
+                        message['text'],
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
+        ),
       ),
-    ),
-  );
+    );
 }
 }
