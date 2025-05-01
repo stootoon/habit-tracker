@@ -587,51 +587,57 @@ Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text("Hello $userId! Your habits on $dateFormat"),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "${streakFreezes > 0 ? '❄️' * streakFreezes : 'Streak Freezes: 0'} ",
-                style: TextStyle(fontSize: streakFreezes > 0 ? 20 : 14),
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                "Hi $userId! Your habits on $dateFormat",
+                style: const TextStyle(fontSize: 18), // Adjust font size if needed
               ),
-              const SizedBox(width: 8),
-              // Show drumstick emoji if KFCs > 0
-              if (kfcsEarned > 0)
-                GestureDetector(
-                  onTap: resetKFCs, // Reset KFCs when pressed
-                  child: const Text(
-                    "🍗",
-                    style: TextStyle(fontSize: 20),
-                  ),
-                )
-              else
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Text(
-                  "KFCs: $kfcsEarned",
-                  style: const TextStyle(fontSize: 14),
+                  "${streakFreezes > 0 ? '❄️' * streakFreezes : 'Streak Freezes: 0'} ",
+                  style: TextStyle(fontSize: streakFreezes > 0 ? 20 : 14),
                 ),
-            ],
-          ),
+                const SizedBox(width: 8),
+                // Show drumstick emoji if KFCs > 0
+                if (kfcsEarned > 0)
+                  GestureDetector(
+                    onTap: resetKFCs, // Reset KFCs when pressed
+                    child: const Text(
+                      "🍗",
+                      style: TextStyle(fontSize: 20),
+                    ),
+                  )
+                else
+                  Text(
+                    "KFCs: $kfcsEarned",
+                    style: const TextStyle(fontSize: 14),
+                  ),
+              ],
+            ),
+          ],
+        ),
+        centerTitle: true,
+        actions: [
+          if (kDebugMode) ...[
+            IconButton(
+              icon: const Icon(Icons.skip_next),
+              onPressed: progressToNextDay,
+              tooltip: "Progress to next day",
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: resetStreaks,
+              tooltip: "Reset all streaks",
+            ),
+          ],
         ],
       ),
-      centerTitle: true,
-      actions: [
-        if (kDebugMode) ...[
-          IconButton(
-            icon: const Icon(Icons.skip_next),
-            onPressed: progressToNextDay,
-            tooltip: "Progress to next day",
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: resetStreaks,
-            tooltip: "Reset all streaks",
-          ),
-        ],
-      ],
-    ),
       body: isLoading
           ? const Center(
               child: CircularProgressIndicator(), // Show a spinner while loading
