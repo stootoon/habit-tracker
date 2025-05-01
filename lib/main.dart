@@ -60,12 +60,16 @@ class HabitHomePage extends StatefulWidget {
 }
 
 class _HabitHomePageState extends State<HabitHomePage> {
-  final habits = ['Eat Vegetables', 'Walk Around the Block'];
+  //final habits = ['Eat Vegetables', 'Walk Around the Block'];
+  List<String> habits = [];
+
   //final userId = 'demo_user';
   final String userId = const String.fromEnvironment('USER_ID', defaultValue: 'demo_user');
 
   int streakFreezes = 0; // Number of streak freezes the user has
   int kfcsEarned = 0;    // Number of KFCs earned by the user  
+
+  bool isLoading = true; // Loading state for the app
 
   final streakFreezeEvery = 3;
   final kfcEvery = 7;
@@ -86,10 +90,12 @@ class _HabitHomePageState extends State<HabitHomePage> {
   @override
   void initState() {
     super.initState();
-    fetchStreaks().then((_) {
-      checkAndApplyStreakFreezes();
-    });
+    initializeApp();
+  }
 
+  Future<void> initializeApp() async {
+    await fetchHabits();
+    await fetchStreaks();
     cleanUpOldMessages();
     listenToMessages();
 
@@ -97,6 +103,10 @@ class _HabitHomePageState extends State<HabitHomePage> {
     for (var habit in habits) {
       confettiControllers[habit] = ConfettiController(duration: const Duration(seconds: 1));
     }
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -106,6 +116,19 @@ class _HabitHomePageState extends State<HabitHomePage> {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> fetchHabits() async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('habits')
+        .get();
+
+    setState(() {
+      habits = querySnapshot.docs.map((doc) => doc.id).toList();
+    });
+    print("Fetched habits: $habits"); 
   }
 
   Future<void> addMessage(String text) async {
@@ -609,42 +632,53 @@ Widget build(BuildContext context) {
         ],
       ],
     ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: Column(
-            children: [
-              Expanded(
-                flex: 2,
-                child: ListView(
-                  padding: const EdgeInsets.all(20),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(), // Show a spinner while loading
+            )
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Column(
                   children: [
-                    for (var habit in habits) habitButton(habit),
+                    Expanded(
+                      flex: 2,
+                      child: habits.isEmpty
+                          ? const Center(
+                              child: Text(
+                                "No habits found. Add some habits to get started!",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            )
+                          : ListView(
+                              padding: const EdgeInsets.all(20),
+                              children: [
+                                for (var habit in habits) habitButton(habit),
+                              ],
+                            ),
+                    ),
+                    const Divider(),
+                    Expanded(
+                      flex: 1,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(10),
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final message = messages[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Text(
+                              message['text'],
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const Divider(),
-              Expanded(
-                flex: 1,
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(10),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Text(
-                        message['text'],
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
 }
 }
